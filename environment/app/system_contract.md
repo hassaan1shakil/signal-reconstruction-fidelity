@@ -1,14 +1,18 @@
 # Signal Reconstruction Fidelity Contract
 
-The implementation is evaluated on input signals S with the following
-properties:
+The public reconstruction API is:
+
+```python
+reconstruct(signal, sample_rate=...)
+```
+
+For an input signal S with the following properties:
 - Duration: 1-30 seconds
 - Sample rate: 8000-48000 Hz
 - Frequency content within [20, Nyquist/2] Hz
 - SNR >= 40dB
 
-For each evaluated signal, the reconstructed signal R = reconstruct(S) must
-satisfy:
+the reconstructed signal R = reconstruct(S) must satisfy:
 
 | Guarantee | Condition | Threshold |
 |-----------|-----------|-----------|
@@ -19,5 +23,19 @@ satisfy:
 
 "Interior samples" = all samples beyond the first and last analysis window.
 
-The pipeline consists of: windowing -> spectral compression -> reconstruction.
-Run with: `python3 -c "from reconstructor import reconstruct; ..."`
+## Pipeline Semantics
+
+The pipeline is a three-stage reconstruction system:
+
+```text
+windowing -> spectral compression -> reconstruction
+```
+
+Each stage must preserve its role in the pipeline. Windowing is responsible for
+stable frame coverage over the full signal extent. Spectral compression must
+remain a quantized representation of each frame. Reconstruction must return a
+completed signal whose aggregate properties match the input according to the
+guarantees above.
+
+The implementation may change internally, but the public API and the pipeline
+contract above must remain intact.
