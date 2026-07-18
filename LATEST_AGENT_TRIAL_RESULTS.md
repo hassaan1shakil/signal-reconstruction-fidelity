@@ -11,9 +11,9 @@ setup run where the agent failed before reaching the task.
 
 | Metric | Result |
 |---|---:|
-| Clean scored runs | 8 |
+| Clean scored runs | 9 |
 | Full solves | 0 |
-| Output metrics passed but behavior failed | 5 |
+| Output metrics passed but behavior failed | 6 |
 | Output metrics failed before behavior checks | 3 |
 | Reward-file/harness failures among scored runs | 0 |
 
@@ -33,7 +33,7 @@ numerically strong outputs, yet none repaired all intended mechanisms.
 | 006 | `2026-07-14__12-55-09` | Codex | `gpt-5.5` | 0.0 | Behavioral failure | Near-exact reconstruction through high-bit coefficient storage, but intended pipeline behavior was not repaired |
 | 007 | `2026-07-14__13-02-55` | Gemini CLI | `gemini-3.1-flash-lite` | 0.0 | Behavioral failure | Positional tail precision tuned enough for metrics, but not magnitude-driven |
 | 008 | `2026-07-14__13-11-36` | Gemini CLI | `gemini-3.1-pro-preview` | 0.0 | Behavioral failure | DC fixed and precision raised, but boundary and magnitude-driven checks failed |
-
+| 009 | `2026-07-18__15-35-10` | terminus-2 | `claude-sonnet-5` | 0.0 | Behavioral failure | Both mechanisms diagnosed correctly and DC alignment fixed structurally, but phase precision was retuned by frequency position rather than made magnitude-driven, and boundary extension still did not preserve edge continuity |
 ## Verifier Signals
 
 The most common behavioral failures were:
@@ -186,6 +186,32 @@ reconstructions, but they did so through shortcuts or incomplete repairs.
     metrics, but still missed the boundary and magnitude-driven compressor
     behaviors.
 
+### Trial 009: `2026-07-18__15-35-10`
+
+- Agent/model: terminus-2, `claude-sonnet-5`
+- Reward: `0.0`
+- Result type: behavioral failure after output metrics passed
+- Behavioral failures:
+  - boundary extension did not preserve edge continuity
+  - phase precision was not driven by spectral magnitude
+- Main changes:
+  - fixed DC alignment structurally by computing the correction from the
+    actual final reconstructed signal instead of the intermediate windowed
+    frame array
+  - adjusted `CompressionProfile` defaults (`profile_shape` 0.3 to 0.5,
+    `transition_width` 0.2 to 0.5), shifting where phase degradation begins
+    along frequency position
+  - left the boundary-extension mechanism unchanged
+- Interpretation:
+  - This was the closest run of the set on output metrics: the candidate beat
+    the reference implementation's pointwise error and spectral correlation
+    on every signal family, and the agent's own 105-combination stress-test
+    suite passed cleanly. The DC fix was a genuine structural repair rather
+    than a shortcut. The phase-precision fix, however, was still a positional
+    parameter retune rather than a switch to magnitude-driven precision, and
+    boundary handling was never addressed. Cost: $0.29, 15 agent steps,
+    5m 43s runtime.
+    
 ## What The Trials Show
 
 The latest trials show that the task is difficult for meaningful reasons:
